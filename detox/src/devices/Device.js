@@ -5,21 +5,27 @@ const argparse = require('../utils/argparse');
 const ArtifactsCopier = require('../artifacts/ArtifactsCopier');
 
 class Device {
-
   constructor(deviceConfig, sessionConfig, deviceDriver) {
     this._deviceConfig = deviceConfig;
     this._sessionConfig = sessionConfig;
     this.deviceDriver = deviceDriver;
     this._processes = {};
-    this._artifactsCopier = new ArtifactsCopier(deviceDriver);
     this.deviceDriver.validateDeviceConfig(deviceConfig);
+
+    const artifactsLocation = argparse.getArgValue('artifacts-location');
+    if (artifactsLocation !== undefined) {
+      this._artifactsCopier = new ArtifactsCopier(deviceDriver);
+    }
   }
 
   async prepare(params = {}) {
     this._binaryPath = this._getAbsolutePath(this._deviceConfig.binaryPath);
     this._deviceId = await this.deviceDriver.acquireFreeDevice(this._deviceConfig.name);
     this._bundleId = await this.deviceDriver.getBundleIdFromBinary(this._binaryPath);
-    this._artifactsCopier.prepare(this._deviceId);
+
+    if (this._artifactsCopier !== undefined) {
+      this._artifactsCopier.prepare(this._deviceId);
+    }
 
     await this.deviceDriver.prepare();
 
@@ -34,15 +40,21 @@ class Device {
   }
 
   setArtifactsDestination(testArtifactsPath) {
-    this._artifactsCopier.setArtifactsDestination(testArtifactsPath);
+    if (this._artifactsCopier !== undefined) {
+      this._artifactsCopier.setArtifactsDestination(testArtifactsPath);
+    }
   }
 
   async finalizeArtifacts() {
-    await this._artifactsCopier.finalizeArtifacts();
+    if (this._artifactsCopier !== undefined) {
+      await this._artifactsCopier.finalizeArtifacts();
+    }
   }
 
   async launchApp(params = {newInstance: false}, bundleId) {
-    await this._artifactsCopier.handleAppRelaunch();
+    if (this._artifactsCopier !== undefined) {
+      await this._artifactsCopier.handleAppRelaunch();
+    }
 
     if (params.url && params.userNotification) {
       throw new Error(`detox can't understand this 'relaunchApp(${JSON.stringify(params)})' request, either request to launch with url or with userNotification, not both`);
@@ -62,12 +74,12 @@ class Device {
     }
 
     if (params.url) {
-      baseLaunchArgs['detoxURLOverride'] = params.url;
-      if(params.sourceApp) {
-        baseLaunchArgs['detoxSourceAppOverride'] = params.sourceApp;
+      baseLaunchArgs.detoxURLOverride = params.url;
+      if (params.sourceApp) {
+        baseLaunchArgs.detoxSourceAppOverride = params.sourceApp;
       }
     } else if (params.userNotification) {
-      baseLaunchArgs = {'detoxUserNotificationDataURL': this.deviceDriver.createPushNotificationJson(params.userNotification)};
+      baseLaunchArgs = {detoxUserNotificationDataURL: this.deviceDriver.createPushNotificationJson(params.userNotification)};
     }
 
     if (params.permissions) {
@@ -95,7 +107,7 @@ class Device {
   /**deprecated */
   async relaunchApp(params = {}, bundleId) {
     if (params.newInstance === undefined) {
-      params['newInstance'] = true;
+      params.newInstance = true;
     }
     await this.launchApp(params, bundleId);
   }
@@ -140,9 +152,9 @@ class Device {
   }
 
   async setLocation(lat, lon) {
-    lat = String(lat).replace('.', ',');
-    lon = String(lon).replace('.', ',');
-    await this.deviceDriver.setLocation(this._deviceId, lat, lon);
+    const _lat = String(lat).replace('.', ',');
+    const _lon = String(lon).replace('.', ',');
+    await this.deviceDriver.setLocation(this._deviceId, _lat, _lon);
   }
 
   async sendUserNotification(params) {
@@ -175,13 +187,13 @@ class Device {
 
   _defaultLaunchArgs() {
     return {
-      'detoxServer': this._sessionConfig.server,
-      'detoxSessionId': this._sessionConfig.sessionId
+      detoxServer: this._sessionConfig.server,
+      detoxSessionId: this._sessionConfig.sessionId
     };
   }
 
   _addPrefixToDefaultLaunchArgs(args) {
-    let newArgs = {};
+    const newArgs = {};
     _.forEach(args, (value, key) => {
       newArgs[`${this.deviceDriver.defaultLaunchArgsPrefix()}${key}`] = value;
     });

@@ -1,5 +1,5 @@
 const log = require('npmlog');
-const sh = require('../utils/sh')
+const sh = require('../utils/sh');
 
 class ArtifactsCopier {
   constructor(deviceDriver) {
@@ -35,9 +35,9 @@ class ArtifactsCopier {
       } catch (ex) {
         log.warn(`Couldn't copy (cp ${cpArgs})`);
       }
-    }
-    
-    if(this._currentTestArtifactsDestination === undefined) {
+    };
+
+    if (this._currentTestArtifactsDestination === undefined) {
       return;
     }
 
@@ -50,7 +50,6 @@ class ArtifactsCopier {
       await copy(sourcePath, destinationSuffix);
     }
   }
-
 }
 
 module.exports = ArtifactsCopier;

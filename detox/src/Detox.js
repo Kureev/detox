@@ -88,13 +88,13 @@ class Detox {
   async beforeEach(...testNameComponents) {
     this._currentTestNumber++;
     if (this._artifactsPathsProvider !== undefined) {
-      const testArtifactsPath = this._artifactsPathsProvider.createPathForTest(this._currentTestNumber, ...testNameComponents)
+      const testArtifactsPath = this._artifactsPathsProvider.createPathForTest(this._currentTestNumber, ...testNameComponents);
       this.device.setArtifactsDestination(testArtifactsPath);
     }
   }
 
   async afterEach(suiteName, testName) {
-    if(this._artifactsPathsProvider !== undefined) {
+    if (this._artifactsPathsProvider !== undefined) {
       await this.device.finalizeArtifacts();
     }
   }
